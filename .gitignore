@@ -8,3 +8,11 @@
 *.filters
 *.user
 *.pdf
+*.tlog
+*.log
+*.exe
+*.ilk
+*.pdb
+.vs/projekt2_Tanczos/v16/.suo
+*.obj
+*.idb
