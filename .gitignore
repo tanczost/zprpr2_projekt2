@@ -1,0 +1,10 @@
+
+*.db
+*.opendb
+*.ipch
+*.sln
+*.txt
+*.vcxproj
+*.filters
+*.user
+*.pdf
