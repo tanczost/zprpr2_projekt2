@@ -32,6 +32,8 @@ typedef struct film
 
 /*funkcie*/
 FILM* nacitaj(void);
+FILM* nacitajFilm(FILE *fr);
+HEREC* nacitajHerca(FILE* fr);
 void vypis(FILM* kino);
 FILM* uvolni(FILM* kino);
 void pridaj(FILM** kino);
@@ -64,64 +66,80 @@ int main()
 	return 0;
 }
 
+FILM* nacitajFilm(FILE *fr)
+{
+	FILM *novy = (FILM*)malloc(sizeof(FILM));
+	if (novy->dalsiFilm == NULL) { printf("Malo pamati\n"); exit(-1); }
+
+	fgets(novy->nazov, MAXZNAK, fr);
+	novy->nazov[strlen(novy->nazov) - 1] = '\0';
+	fscanf(fr, "%d", &novy->rokVyroby);
+	fscanf(fr, "%s %s\n", novy->reziser.krstne, novy->reziser.priezvisko);
+
+	novy->herci = NULL;
+	novy->dalsiFilm = NULL;
+}
+
+HEREC* nacitajHerca(FILE* fr)
+{
+	HEREC *novy = (HEREC*)malloc(sizeof(HEREC));
+	if (novy == NULL) { printf("Malo pamati\n"); exit(-1); }
+	fscanf(fr, "%s %s %d\n", novy->meno.krstne, novy->meno.priezvisko, &novy->rokNarodenia);
+	novy->kolega = NULL;
+	return novy;
+}
+
 FILM* nacitaj(void)
 {
+	/*premenne*/
 	FILE* fr;
+	char hviezda;
+
 	if ((fr = fopen(SUBOR, "r")) == NULL)
 	{
 		printf("Subor sa nenasiel\n"); exit(-1);
 	}
-
 	int c;
 
-	FILM *zac = (FILM*)malloc(sizeof(FILM)); //vytvorenie zaciatku zoznamu
-	if (zac == NULL) { printf("Malo pamati\n"); exit(-1);}
+	if ((c = getc(fr)) == EOF) return NULL; //koniec suboru
+	else ungetc(c, fr);
+
+
+	FILM* zac = nacitajFilm(fr); //vytvorenie prveho zaznamu
 	FILM* kino = zac;
 
-	while ((c = getc(fr)) != EOF)
+
+	if ((hviezda = getc(fr)) == '*')
 	{
-		ungetc(c, fr);
+		kino->herci = nacitajHerca(fr);
+	}
+	HEREC* temp = kino->herci;
 
-		if (kino->dalsiFilm == NULL)
+	while ((hviezda = getc(fr)) == '*')
+	{
+		temp->kolega = nacitajHerca(fr);
+		temp = temp->kolega;
+	}
+	ungetc(hviezda, fr);
+
+	while (!feof(fr))
+	{
+		kino->dalsiFilm = nacitajFilm(fr);
+		kino = kino->dalsiFilm;
+		if ((hviezda = getc(fr)) == '*') 
 		{
-			kino->dalsiFilm = (FILM*)malloc(sizeof(FILM)); //pridanie do zoznamu , !!urobit este kontrolu na null!!
-			if(kino ->dalsiFilm == NULL) { printf("Malo pamati\n"); exit(-1); }
-			kino = kino->dalsiFilm;
+			kino->herci = nacitajHerca(fr);
 		}
-		fgets(kino->nazov, MAXZNAK, fr);
-		kino->nazov[strlen(kino->nazov) - 1] = '\0';
-		fscanf(fr, "%d", &kino->rokVyroby);
-		fscanf(fr, "%s %s\n", kino->reziser.krstne, kino->reziser.priezvisko);
-
-		char hviezda; HEREC* ucinkujuci = kino->herci;
-
-		if ((hviezda = getc(fr)) == '*') //ked su herci tak sa vytvori prvy prvok pre herca
-		{
-			kino->herci = (HEREC*)malloc(sizeof(HEREC));
-			if(kino->herci == NULL){ printf("Malo pamati\n"); exit(-1); }
-			ucinkujuci = kino->herci;
-		}
-		else kino->herci = NULL; //nie su herci
-		ungetc(hviezda, fr);
+		HEREC* temp = kino->herci;
 
 		while ((hviezda = getc(fr)) == '*')
 		{
-			if (ucinkujuci->kolega == NULL)
-			{
-				ucinkujuci->kolega = (HEREC*)malloc(sizeof(HEREC)); //!!kontrola na null!!
-				if(ucinkujuci->kolega == NULL) { printf("Malo pamati\n"); exit(-1); }
-				ucinkujuci = ucinkujuci->kolega;
-			}
-			fscanf(fr, "%s %s %d\n", ucinkujuci->meno.krstne, ucinkujuci->meno.priezvisko, &ucinkujuci->rokNarodenia);
-
-			ucinkujuci->kolega = NULL;
+			temp->kolega = nacitajHerca(fr);
+			temp = temp->kolega;
 		}
 		ungetc(hviezda, fr);
-
-		kino->dalsiFilm = NULL;
+		
 	}
-
-	//if (fclose(fr) == EOF)	printf("Subor sa nepodarilo zatvorit\n"); exit(-1);
 	return zac;
 }
 
