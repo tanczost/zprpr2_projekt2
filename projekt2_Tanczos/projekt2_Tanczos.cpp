@@ -74,7 +74,8 @@ FILM* nacitajFilm(FILE *fr)
 	fgets(novy->nazov, MAXZNAK, fr);
 	novy->nazov[strlen(novy->nazov) - 1] = '\0';
 	fscanf(fr, "%d", &novy->rokVyroby);
-	fscanf(fr, "%s %s\n", novy->reziser.krstne, novy->reziser.priezvisko);
+	fscanf(fr, "%s %s", novy->reziser.krstne, novy->reziser.priezvisko);
+	if (fr != stdin) fscanf(fr, "\n");
 
 	novy->herci = NULL;
 	novy->dalsiFilm = NULL;
@@ -84,7 +85,8 @@ HEREC* nacitajHerca(FILE* fr)
 {
 	HEREC *novy = (HEREC*)malloc(sizeof(HEREC));
 	if (novy == NULL) { printf("Malo pamati\n"); exit(-1); }
-	fscanf(fr, "%s %s %d\n", novy->meno.krstne, novy->meno.priezvisko, &novy->rokNarodenia);
+	fscanf(fr, "%s %s %d", novy->meno.krstne, novy->meno.priezvisko, &novy->rokNarodenia);
+	if (fr != stdin) fscanf(fr, "\n");
 	novy->kolega = NULL;
 	return novy;
 }
@@ -126,7 +128,7 @@ FILM* nacitaj(void)
 	{
 		kino->dalsiFilm = nacitajFilm(fr);
 		kino = kino->dalsiFilm;
-		if ((hviezda = getc(fr)) == '*') 
+		if ((hviezda = getc(fr)) == '*')
 		{
 			kino->herci = nacitajHerca(fr);
 		}
@@ -138,7 +140,6 @@ FILM* nacitaj(void)
 			temp = temp->kolega;
 		}
 		ungetc(hviezda, fr);
-		
 	}
 	return zac;
 }
@@ -189,50 +190,43 @@ void pridaj(FILM** kino)
 {
 	/*premenne*/
 	char hviezda;
-	HEREC* pom1 = NULL;
-	FILM* pom = (FILM*)malloc(sizeof(FILM));
+	HEREC* pom = NULL;
+	FILM* temp = (*kino);
 	/*********/
 	if (*kino == NULL) //vstupujeme ked zoznam je prazdny
 	{
-		*kino = pom;
+		(*kino) = nacitajFilm(stdin); //nacitame prvy film
+		temp = (*kino);
 	}
 	else //vstupujeme ked uz v zozname su filmy
 	{
-		while ((*kino)->dalsiFilm != NULL) //najdeme posledny
-			{
-				(*kino) = (*kino)->dalsiFilm;
-			}
+		while (temp->dalsiFilm != NULL) //najdeme posledny
+				temp = temp->dalsiFilm;
+		temp = temp->dalsiFilm = nacitajFilm(stdin); //nacitame posledny film a nastavime nanho ukazovatel
 	}
 
-	fgets(pom->nazov, MAXZNAK, stdin); //nacitanie novych nazvov, cisiel, ...
-	pom->nazov[strlen(pom->nazov) - 1] = '\0';
-	scanf("%d", &pom->rokVyroby);
-	scanf("%s %s", pom->reziser.krstne, pom->reziser.priezvisko);
-	pom->dalsiFilm = NULL;
 	while (getchar() != '\n');
 
-	if ((hviezda = getchar()) != '*') pom1 = pom->herci = (HEREC*)malloc(sizeof(HEREC)); //zadavaju sa herci
-	else pom->herci = NULL;  //nezadavaju sa herci
-	ungetc(hviezda, stdin);
-
-	while((hviezda = getchar()) != '*')
+	if ((hviezda = getchar()) != '*')
 	{
 		ungetc(hviezda, stdin);
-		if (pom1->kolega == NULL)
-		{
-			pom1->kolega = (HEREC*)malloc(sizeof(HEREC));
-			pom1 = pom1->kolega;
-		}
-		scanf("%s %s %d", pom1->meno.krstne, pom1->meno.priezvisko, &pom1->rokNarodenia);
-		pom1->kolega = NULL;
-		while (getchar() != '\n');
-
+		temp->herci = nacitajHerca(stdin); //zadavaju sa herci
 	}
+	else temp->herci = NULL;  //nezadavaju sa herci
+	ungetc(hviezda, stdin);
 
 	while (getchar() != '\n');
 
-	if (*kino == pom) (*kino)->dalsiFilm = NULL; //je to prvy film v zozname
-	else (*kino)->dalsiFilm = pom; //pridali sme dalsi film do zoznamu
+	pom = temp->herci;
+	while((hviezda = getchar()) != '*') //zadavanie dalsich hercov
+	{
+		ungetc(hviezda, stdin);
+		pom->kolega = nacitajHerca(stdin);
+		pom = pom->kolega;
+		while (getchar() != '\n');
+	}
+
+	while (getchar() != '\n');
 }
 
 FILM* vymaz(FILM* kino)
