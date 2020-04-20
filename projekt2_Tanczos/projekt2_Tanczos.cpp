@@ -76,7 +76,7 @@ FILM* nacitajFilm(FILE *fr)
 	fscanf(fr, "%d", &novy->rokVyroby);
 	fscanf(fr, "%s %s", novy->reziser.krstne, novy->reziser.priezvisko);
 	if (fr != stdin) fscanf(fr, "\n");
-
+	else while (getchar() != '\n');
 	novy->herci = NULL;
 	novy->dalsiFilm = NULL;
 }
@@ -87,6 +87,7 @@ HEREC* nacitajHerca(FILE* fr)
 	if (novy == NULL) { printf("Malo pamati\n"); exit(-1); }
 	fscanf(fr, "%s %s %d", novy->meno.krstne, novy->meno.priezvisko, &novy->rokNarodenia);
 	if (fr != stdin) fscanf(fr, "\n");
+	else while (getchar() != '\n');
 	novy->kolega = NULL;
 	return novy;
 }
@@ -205,8 +206,6 @@ void pridaj(FILM** kino)
 		temp = temp->dalsiFilm = nacitajFilm(stdin); //nacitame posledny film a nastavime nanho ukazovatel
 	}
 
-	while (getchar() != '\n');
-
 	if ((hviezda = getchar()) != '*')
 	{
 		ungetc(hviezda, stdin);
@@ -215,7 +214,7 @@ void pridaj(FILM** kino)
 	else temp->herci = NULL;  //nezadavaju sa herci
 	ungetc(hviezda, stdin);
 
-	while (getchar() != '\n');
+	//while (getchar() != '\n');
 
 	pom = temp->herci;
 	while((hviezda = getchar()) != '*') //zadavanie dalsich hercov
@@ -223,7 +222,7 @@ void pridaj(FILM** kino)
 		ungetc(hviezda, stdin);
 		pom->kolega = nacitajHerca(stdin);
 		pom = pom->kolega;
-		while (getchar() != '\n');
+		//while (getchar() != '\n');
 	}
 
 	while (getchar() != '\n');
