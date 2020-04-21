@@ -40,6 +40,8 @@ void pridaj(FILM** kino);
 FILM* vymaz(FILM* kino);
 void filmy(FILM* kino);
 void herci(FILM* kino);
+void rok(FILM* kino);
+HEREC* zoznamRok(HEREC* zac, HEREC zdroj);
 
 
 int main()
@@ -66,6 +68,7 @@ int main()
 		else if(!strcmp(prikaz, "vymaz")) kino = vymaz(kino);
 		else if(!strcmp(prikaz, "filmy")) filmy(kino);
 		else if(!strcmp(prikaz, "herci")) herci(kino);
+		else if(!strcmp(prikaz, "rok")) rok(kino);
 
 	}
 	return 0;
@@ -326,4 +329,74 @@ void herci(FILM* kino)
 	}
 
 	free(pole);
+}
+
+HEREC* zoznamRok(HEREC* zac, HEREC zdroj)
+{
+	if (zac == NULL) //vkladame prveho herca
+	{
+		zac = (HEREC*)malloc(sizeof(HEREC));
+		*zac = zdroj;
+		zac->kolega = NULL;
+		return zac;
+	}
+
+	if (strcmp(zdroj.meno.priezvisko,zac->meno.priezvisko) < 0)
+	{
+		HEREC* novy = (HEREC*)malloc(sizeof(HEREC));
+		*novy = zdroj;
+		novy->kolega = zac;
+		return novy;
+	}
+
+
+	HEREC* pom = zac;
+
+	while (pom->kolega != NULL)
+	{
+		if (!strcmp(zdroj.meno.krstne, pom->meno.krstne) && !strcmp(zdroj.meno.priezvisko, pom->meno.priezvisko)
+			&& zdroj.rokNarodenia == pom->rokNarodenia) return zac; //tohto herca uz mame v zozname
+
+
+		pom = pom->kolega;
+	}
+
+	if (!strcmp(zdroj.meno.krstne, pom->meno.krstne) && !strcmp(zdroj.meno.priezvisko, pom->meno.priezvisko)
+		&& zdroj.rokNarodenia == pom->rokNarodenia) return zac;
+	HEREC *novy = (HEREC*)malloc(sizeof(HEREC));
+	*novy = zdroj;
+	novy->kolega = pom->kolega;
+	pom->kolega = novy;
+	return zac;
+
+
+}
+
+void rok(FILM* kino)
+{
+	int rok;
+	scanf("%d", &rok);
+	HEREC* zac = NULL;
+
+	while (kino != NULL)
+	{
+		if (kino->rokVyroby == rok)
+		{
+			HEREC* temp = kino->herci;
+			while (temp != NULL)
+			{
+				zac = zoznamRok(zac, *temp);
+				temp = temp->kolega;
+			}
+		}
+		kino = kino->dalsiFilm;
+	}
+
+	while (zac != NULL)
+	{
+		printf("%s %s\n", zac->meno.krstne, zac->meno.priezvisko);
+		HEREC* pom = zac;
+		zac = zac->kolega;
+		free(pom);
+	}
 }
