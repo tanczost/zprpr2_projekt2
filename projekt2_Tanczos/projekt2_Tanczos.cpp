@@ -38,6 +38,9 @@ void vypis(FILM* kino);
 FILM* uvolni(FILM* kino);
 void pridaj(FILM** kino);
 FILM* vymaz(FILM* kino);
+void filmy(FILM* kino);
+void herci(FILM* kino);
+
 
 int main()
 {
@@ -46,7 +49,7 @@ int main()
 	{
 		char riadok[MAXZNAK];
 		char prikaz[MAXZNAK];
-		fgets(riadok, MAXZNAK - 1, stdin);
+	fgets(riadok, MAXZNAK - 1, stdin);
 		sscanf(riadok, "%s", prikaz);
 		if (!strcmp(prikaz, "koniec")) //uvolni sa pamat a konci program
 		{
@@ -61,6 +64,8 @@ int main()
 		}
 		else if(!strcmp(prikaz, "pridaj")) pridaj(&kino);
 		else if(!strcmp(prikaz, "vymaz")) kino = vymaz(kino);
+		else if(!strcmp(prikaz, "filmy")) filmy(kino);
+		else if(!strcmp(prikaz, "herci")) herci(kino);
 
 	}
 	return 0;
@@ -211,8 +216,11 @@ void pridaj(FILM** kino)
 		ungetc(hviezda, stdin);
 		temp->herci = nacitajHerca(stdin); //zadavaju sa herci
 	}
-	else temp->herci = NULL;  //nezadavaju sa herci
-	ungetc(hviezda, stdin);
+	else
+	{
+		ungetc(hviezda, stdin);
+		temp->herci = NULL;  //nezadavaju sa herci
+	}
 
 	//while (getchar() != '\n');
 
@@ -261,4 +269,61 @@ FILM* vymaz(FILM* kino)
 	}
 	free(kino);
 	return zac;
+}
+
+void filmy(FILM* kino)
+{
+	char meno1[MAXZNAK], meno2[MAXZNAK];
+	scanf("%s %s", meno1, meno2);
+	while (kino != NULL)
+	{
+		HEREC* pom = kino->herci;
+		while (pom != NULL)
+		{
+			if (!strcmp(meno1, pom->meno.krstne) && !strcmp(meno2, pom->meno.priezvisko)) break;
+			pom = pom->kolega;
+		}
+		if (pom != NULL) printf("%s (%d)\n", kino->nazov, kino->rokVyroby);
+		kino = kino->dalsiFilm;
+	}
+	while (getchar() != '\n');
+
+}
+
+void herci(FILM* kino)
+{
+	char nazov1[MAXZNAK], nazov2[MAXZNAK];
+	fgets(nazov1, MAXZNAK, stdin);
+	nazov1[strlen(nazov1) - 1] = '\0';
+
+	fgets(nazov2, MAXZNAK, stdin);
+	nazov2[strlen(nazov2) - 1] = '\0';
+
+	HEREC* pole = NULL;
+	int pocetHercov = 0;
+	while (kino != NULL)
+	{
+		if (strcmp(nazov1, kino->nazov) && strcmp(nazov2, kino->nazov)) { kino = kino->dalsiFilm; continue; }
+
+		HEREC* pom = kino->herci;
+		while (pom != NULL)
+		{
+			pole = (HEREC*)realloc(pole, (pocetHercov + 1) * sizeof(HEREC));
+			pole[pocetHercov].meno = pom->meno;
+			pole[pocetHercov].rokNarodenia = pom->rokNarodenia;
+			pocetHercov++;
+			pom = pom->kolega;
+		}
+		kino = kino->dalsiFilm;
+
+	}
+	for (int i = 0; i < pocetHercov; i++)
+	{
+		for (int j = i + 1; j < pocetHercov; j++)
+		{
+			if(!strcmp(pole[i].meno.priezvisko,pole[j].meno.priezvisko)) printf("%s %s\n", pole[i].meno.krstne, pole[i].meno.priezvisko);
+		}
+	}
+
+	free(pole);
 }
