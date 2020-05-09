@@ -1,17 +1,9 @@
 // projekt2_Tanczos.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-
-
 /*
-*
-** Bradley Cooper 1975
-* Awall Campbell 1973
-* Lady Gaga 1986
-* Dwayne Johnson 1972
-*
-*
-*pridat dvakra to iste??
-*
+* autor - Tomas Tanczos
+* datum - 09.05.2020
+* program - praca so spajanym zoznamom
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +11,7 @@
 
 #define SUBOR "filmy.txt"
 #define MAXZNAK 100
+#define PAMATERR { printf("Malo pamati\n"); exit(-1); } //makro pre chybove hlasenie
 
 typedef struct meno
 {
@@ -38,13 +31,13 @@ typedef struct film
 	char nazov[MAXZNAK];
 	int rokVyroby;
 	MENO reziser; //meno rezisera
-	HEREC* herci;
-	film* dalsiFilm;
+	struct herec* herci;
+	struct film* dalsiFilm;
 }FILM;
 
 /*funkcie*/
 FILM* nacitaj(void);
-FILM* nacitajFilm(FILE *fr);
+FILM* nacitajFilm(FILE* fr);
 HEREC* nacitajHerca(FILE* fr);
 void vypis(FILM* kino);
 FILM* uvolni(FILM* kino);
@@ -63,7 +56,6 @@ int main()
 	char prikaz[MAXZNAK];
 	do {
 		scanf("%s", prikaz);
-		while (getchar() != '\n');
 		if (!strcmp(prikaz, "vypis")) vypis(kino); //vypis zoznam filmov
 		else if (!strcmp(prikaz, "nacitaj")) //pamat sa uvolni a nacita sa znova zoznam filmov
 		{
@@ -75,20 +67,20 @@ int main()
 		else if (!strcmp(prikaz, "filmy")) filmy(kino);
 		else if (!strcmp(prikaz, "herci")) herci(kino);
 		else if (!strcmp(prikaz, "rok")) rok(kino);
-
 	} while (strcmp(prikaz, "koniec"));
+
 
 	uvolni(kino); //uvolni sa pamat
 
 	return 0;
 }
 
-FILM* nacitajFilm(FILE *fr) //fr moze byt bud subor alebo stdin
+FILM* nacitajFilm(FILE* fr) //fr moze byt bud subor alebo stdin
 {
-	FILM *novy = (FILM*)malloc(sizeof(FILM));
-	if (novy->dalsiFilm == NULL) { printf("Malo pamati\n"); exit(-1); } //alokacia pamati pre novy prvok
-	/*nacitanie dat*/
-	fgets(novy->nazov, MAXZNAK, fr);
+	FILM* novy = (FILM*)malloc(sizeof(FILM));//alokacia pamati pre novy prvok
+	if (novy == NULL) PAMATERR
+		/*nacitanie dat*/
+		fgets(novy->nazov, MAXZNAK, fr);
 	novy->nazov[strlen(novy->nazov) - 1] = '\0';
 	fscanf(fr, "%d", &novy->rokVyroby);
 	fscanf(fr, "%s %s", novy->reziser.krstne, novy->reziser.priezvisko);
@@ -103,9 +95,9 @@ FILM* nacitajFilm(FILE *fr) //fr moze byt bud subor alebo stdin
 
 HEREC* nacitajHerca(FILE* fr)
 {
-	HEREC *novy = (HEREC*)malloc(sizeof(HEREC));
-	if (novy == NULL) { printf("Malo pamati\n"); exit(-1); }
-	fscanf(fr, "%s %s %d", novy->meno.krstne, novy->meno.priezvisko, &novy->rokNarodenia);
+	HEREC* novy = (HEREC*)malloc(sizeof(HEREC)); //alokacia pamati pre novy prvok
+	if (novy == NULL) PAMATERR
+		fscanf(fr, "%s %s %d", novy->meno.krstne, novy->meno.priezvisko, &novy->rokNarodenia); //nacitanie dat
 	if (fr != stdin) fscanf(fr, "\n");
 	else while (getchar() != '\n');
 	novy->herci = NULL;
@@ -122,7 +114,7 @@ FILM* nacitaj(void)
 
 	if ((fr = fopen(SUBOR, "r")) == NULL) { printf("Subor sa nenasiel\n"); exit(-1); } //kontrola otvorenia
 
-	if ((c = getc(fr)) == EOF) return NULL; //subor je prazdny, vratime NULL
+	if ((c = getc(fr)) == EOF) { printf("Prazdny subor\n"); return NULL; } //subor je prazdny, vratime NULL
 	else ungetc(c, fr); //musime vratit znak
 
 	FILM* zac = nacitajFilm(fr); //vytvorenie prveho zaznamu
@@ -171,10 +163,12 @@ void vypis(FILM* kino)
 		else printf("Hraju:");
 		while (ucinkujuci != NULL)
 		{
-			printf(" %s %s (%d),", ucinkujuci->meno.krstne, ucinkujuci->meno.priezvisko, ucinkujuci->rokNarodenia);
+			printf(" %s %s (%d)", ucinkujuci->meno.krstne, ucinkujuci->meno.priezvisko, ucinkujuci->rokNarodenia);
 			ucinkujuci = ucinkujuci->herci;
+			if (ucinkujuci != NULL) printf(", ");
 		}
-		printf("\b \n");
+
+		putchar('\n');
 		kino = kino->dalsiFilm;
 	}
 }
@@ -182,8 +176,6 @@ void vypis(FILM* kino)
 FILM* uvolni(FILM* kino)
 {
 	/*premenne*/
-	FILM* pom1;
-	HEREC *pom2;
 	/*********/
 
 
@@ -212,6 +204,7 @@ void pridaj(FILM** kino)
 	char hviezda;
 	HEREC* pom = NULL;
 	FILM* temp = (*kino);
+	while (getchar() != '\n');
 	/*********/
 	if (*kino == NULL) //vstupujeme ked zoznam je prazdny
 	{
@@ -237,7 +230,7 @@ void pridaj(FILM** kino)
 	}
 
 	pom = temp->herci;
-	while((hviezda = getchar()) != '*') //zadavanie dalsich hercov
+	while ((hviezda = getchar()) != '*') //zadavanie dalsich hercov
 	{
 		ungetc(hviezda, stdin);
 		pom->herci = nacitajHerca(stdin);
@@ -249,9 +242,10 @@ FILM* vymaz(FILM* kino)
 {
 	/*premenne*/
 	char nazov[MAXZNAK];
-	FILM* pred = NULL, *zac = kino;
+	FILM* pred = NULL, * zac = kino;
 	HEREC* pom;
 	int counter = 1;
+	while (getchar() != '\n');
 	/**********/
 
 	fgets(nazov, MAXZNAK, stdin);
@@ -293,12 +287,13 @@ void filmy(FILM* kino)
 		if (pom != NULL) printf("%s (%d)\n", kino->nazov, kino->rokVyroby); //nasli sme herca lebo pom neukazuje na NULL
 		kino = kino->dalsiFilm;
 	}
-	while (getchar() != '\n');
+
 
 }
 
 void herci(FILM* kino)
 {
+	while (getchar() != '\n');
 	char nazov1[MAXZNAK], nazov2[MAXZNAK];
 	fgets(nazov1, MAXZNAK, stdin);
 	nazov1[strlen(nazov1) - 1] = '\0';
@@ -316,8 +311,8 @@ void herci(FILM* kino)
 		while (pom != NULL)
 		{
 			pole = (HEREC*)realloc(pole, (pocetHercov + 1) * sizeof(HEREC));
-			if (pole == NULL) { printf("Malo pamati\n"); exit(-1); }
-			pole[pocetHercov] = *pom;
+			if (pole == NULL) PAMATERR
+				pole[pocetHercov] = *pom;
 			pocetHercov++;
 			pom = pom->herci;
 		}
@@ -328,10 +323,14 @@ void herci(FILM* kino)
 	{
 		for (int j = i + 1; j < pocetHercov; j++)
 		{
-			if(!strcmp(pole[i].meno.priezvisko,pole[j].meno.priezvisko)) printf("%s %s\n", pole[i].meno.krstne, pole[i].meno.priezvisko); //vypiseme ked sa meno nachadza v poli 2x
+			if (!strcmp(pole[i].meno.priezvisko, pole[j].meno.priezvisko))
+			{
+				printf("%s %s (%d), ", pole[i].meno.krstne, pole[i].meno.priezvisko, pole[i].rokNarodenia); //vypiseme ked sa meno nachadza v poli 2x
+			}
 		}
 	}
-
+	printf("\b\b ");
+	putchar('\n');
 	free(pole);
 }
 
@@ -340,7 +339,8 @@ HEREC* zoznamRok(HEREC* zac, HEREC zdroj)
 	if (zac == NULL) //vkladame prveho herca
 	{
 		zac = (HEREC*)malloc(sizeof(HEREC));
-		*zac = zdroj;
+		if (zac == NULL) PAMATERR
+			* zac = zdroj;
 		zac->herci = NULL;
 		return zac;
 	}
@@ -348,7 +348,8 @@ HEREC* zoznamRok(HEREC* zac, HEREC zdroj)
 	if (porovnaj(zdroj, *zac) < 0) //treba poeovnat zvlast prveho, lebo sa vracia iny ukazovatel
 	{
 		HEREC* novy = (HEREC*)malloc(sizeof(HEREC));
-		*novy = zdroj;
+		if (novy == NULL) PAMATERR
+			* novy = zdroj;
 		novy->herci = zac;
 		return novy;
 	}
@@ -358,7 +359,8 @@ HEREC* zoznamRok(HEREC* zac, HEREC zdroj)
 	while (pom->herci != NULL && porovnaj(zdroj, *(pom->herci)) > 0) pom = pom->herci;
 	if (pom->herci != NULL && porovnaj(zdroj, *(pom->herci)) == 0) return zac; //ked sme koncili v loope kvoli 0 mame toho isteho herca
 
-	HEREC *novy = (HEREC*)malloc(sizeof(HEREC)); //koncili sme kvoli -1
+	HEREC* novy = (HEREC*)malloc(sizeof(HEREC)); //koncili sme kvoli -1
+	if (novy == NULL) PAMATERR;
 	*novy = zdroj;
 	novy->herci = pom->herci;
 	pom->herci = novy;
@@ -388,11 +390,13 @@ void rok(FILM* kino)
 
 	while (zac != NULL) //vypisujeme a postupne sa uvolnuje pamat
 	{
-		printf("%s %s %d\n", zac->meno.krstne, zac->meno.priezvisko, zac->rokNarodenia);
+		printf("%s %s %d", zac->meno.krstne, zac->meno.priezvisko, zac->rokNarodenia);
 		HEREC* pom = zac;
 		zac = zac->herci;
+		if (zac != NULL) printf(", ");
 		free(pom);
 	}
+	putchar('\n');
 }
 
 int porovnaj(const HEREC a, const HEREC b)
